@@ -4,42 +4,47 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>System Breach</title>
-
 <style>
-  body {
+  html, body {
+    margin: 0;
+    padding: 0;
     background: black;
-    color: #00ff00;
-    font-family: monospace;
-    padding: 15px;
     overflow: hidden;
+    font-family: monospace;
+    color: #00ff00;
+  }
+
+  canvas#matrix {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
   }
 
   #terminal {
+    position: relative;
+    z-index: 1;
     white-space: pre-line;
     font-size: 14px;
+    padding: 15px;
+    max-height: 80vh;
+    overflow-y: auto;
   }
 
-  .blink {
-    animation: blink 1s infinite;
-  }
-
-  @keyframes blink {
-    0%,100% { opacity: 1; }
-    50% { opacity: 0; }
-  }
+  .blink { animation: blink 1s infinite; }
+  @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
 
   .progress {
-    width: 100%;
+    position: relative;
+    z-index: 1;
+    width: 90%;
     background: #111;
     border: 1px solid #00ff00;
-    margin: 10px 0;
+    margin: 10px auto;
   }
-
-  .bar {
-    width: 0%;
-    height: 10px;
-    background: #00ff00;
-  }
+  .bar { width: 0%; height: 10px; background: #00ff00; }
 
   .camera {
     position: fixed;
@@ -52,6 +57,8 @@
     justify-content: center;
     align-items: center;
     font-size: 20px;
+    color: #00ff00;
+    z-index: 2;
   }
 
   .flash {
@@ -60,106 +67,170 @@
     height: 100%;
     background: white;
     opacity: 0;
+    z-index: 3;
   }
+
+  .glitch {
+    position: fixed;
+    top:0; left:0;
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    z-index: 5;
+    pointer-events: none;
+  }
+
+  h2 { color: red; text-align: center; margin-top: 20%; }
 </style>
 </head>
-
 <body>
 
+<canvas id="matrix"></canvas>
 <div id="terminal"></div>
-
 <div class="progress"><div class="bar" id="bar"></div></div>
-
-<div class="camera" id="camera">
-  📸 Accessing Front Camera...
-</div>
-
+<div class="camera" id="camera">📸 Accessing Front Camera...</div>
 <div class="flash" id="flash"></div>
+<div class="glitch" id="glitch"></div>
+
+<!-- Sounds -->
+<audio id="beep" src="https://www.soundjay.com/button/beep-07.mp3"></audio>
+<audio id="glitch1" src="https://www.soundjay.com/button/sounds/button-16.mp3"></audio>
+<audio id="glitch2" src="https://www.soundjay.com/button/sounds/button-10.mp3"></audio>
+<audio id="glitch3" src="https://www.soundjay.com/button/sounds/button-3.mp3"></audio>
 
 <script>
-const lines = [
-  "Initializing breach protocol...",
-  "Connecting to mobile device...",
-  "IP Address: 192.168.43.***",
-  "Bypassing firewall...",
-  "Access granted ✔",
-  "Extracting contacts...",
-  "Downloading gallery...",
-  "Tracking live location...",
-  "Injecting spyware...",
-  "WARNING: DEVICE COMPROMISED",
-];
+if (!localStorage.getItem("hackerPageVisited")) {
+  localStorage.setItem("hackerPageVisited", "true");
 
-let i = 0;
-let j = 0;
-let current = "";
+  // ----- MATRIX RAIN -----
+  const canvas = document.getElementById('matrix');
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ123456789@#$%^&*()*&^%';
+  const fontSize = 16;
+  const columns = canvas.width / fontSize;
+  const drops = Array(Math.floor(columns)).fill(1);
 
-function type() {
-  if (i < lines.length) {
-    if (j < lines[i].length) {
-      current += lines[i].charAt(j);
-      document.getElementById("terminal").innerHTML = current + '<span class="blink">|</span>';
-      j++;
-      setTimeout(type, 25);
-    } else {
-      current += "\n";
-      i++;
-      j = 0;
-      setTimeout(type, 300);
+  function drawMatrix() {
+    ctx.fillStyle = 'rgba(0,0,0,0.05)';
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle = '#0F0';
+    ctx.font = fontSize + "px monospace";
+    for(let i=0;i<drops.length;i++){
+      const text = letters.charAt(Math.floor(Math.random()*letters.length));
+      ctx.fillText(text,i*fontSize,drops[i]*fontSize);
+      if(drops[i]*fontSize>canvas.height && Math.random()>0.975){ drops[i]=0; }
+      drops[i]++;
     }
-  } else {
-    startProgress();
   }
-}
+  setInterval(drawMatrix,50);
 
-type();
+  // ----- TERMINAL FAKE HACK -----
+  const terminal = document.getElementById('terminal');
+  const beep = document.getElementById('beep');
 
-// Progress bar animation
-function startProgress() {
-  let width = 0;
-  let bar = document.getElementById("bar");
+  const messages = [
+    "Initializing breach protocol...",
+    "Connecting to mobile device...",
+    `IP Address: 192.168.${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*255)}`,
+    "Scanning local network...",
+    "Ping 192.168.1.1 ... Success ✔",
+    "Ping 192.168.1.45 ... Failed ❌",
+    "Bypassing firewall...",
+    "Access granted ✔",
+    "Extracting contacts...",
+    "Downloading gallery...",
+    "Tracking live location...",
+    "Injecting spyware...",
+    "WARNING: DEVICE COMPROMISED",
+  ];
 
-  let interval = setInterval(() => {
-    width++;
-    bar.style.width = width + "%";
-
-    if (width === 100) {
-      clearInterval(interval);
-      fakeCamera();
-    }
-  }, 40);
-}
-
-// Fake camera effect
-function fakeCamera() {
-  document.getElementById("camera").style.display = "flex";
-
-  setTimeout(() => {
-    let flash = document.getElementById("flash");
-    flash.style.opacity = "1";
-    setTimeout(() => {
-      flash.style.opacity = "0";
-      showFinal();
-    }, 200);
-  }, 1500);
-}
-
-// Final message + vibration
-function showFinal() {
-  document.body.innerHTML = `
-    <h2 style="color:red; text-align:center;">
-    ⚠ SYSTEM FULLY HACKED ⚠<br><br>
-    Your data has been uploaded<br>
-    Device under control
-    </h2>
-  `;
-
-  // vibration (works on some mobiles)
-  if (navigator.vibrate) {
-    navigator.vibrate([200,100,200,100,300]);
+  let i=0,j=0,current="";
+  function type(){
+    if(i<messages.length){
+      if(j<messages[i].length){
+        current+=messages[i].charAt(j);
+        terminal.innerHTML=current+'<span class="blink">|</span>';
+        j++; setTimeout(type,25);
+      }else{ current+='\n'; i++; j=0; setTimeout(type,300); }
+    }else{ startProgress(); }
   }
+  type();
+
+  // ----- PROGRESS BAR -----
+  function startProgress(){
+    let width=0;
+    const bar=document.getElementById('bar');
+    const interval=setInterval(()=>{
+      width++;
+      bar.style.width = width+"%";
+      if(width===100){ clearInterval(interval); beep.play(); fakeCamera(); }
+    },40);
+  }
+
+  // ----- FAKE CAMERA -----
+  function fakeCamera(){
+    const cam=document.getElementById('camera');
+    cam.style.display='flex';
+    setTimeout(()=>{
+      const flash=document.getElementById('flash');
+      flash.style.opacity='1';
+      setTimeout(()=>{ flash.style.opacity='0'; showFinal(); },200);
+    },1500);
+  }
+
+  // ----- FINAL MESSAGE WITH GLITCH -----
+  function showFinal(){
+    document.body.innerHTML=`<h2>⚠ SYSTEM FULLY HACKED ⚠<br><br>Your data has been uploaded<br>Device under control</h2>`;
+    if(navigator.vibrate) navigator.vibrate([200,100,200,100,300]);
+    startGlitchEffects();
+  }
+
+  // ----- GLITCH EFFECTS & RANDOM SOUNDS -----
+  function startGlitchEffects(){
+    const glitchDiv = document.createElement('div');
+    glitchDiv.style.position='fixed';
+    glitchDiv.style.top='0';
+    glitchDiv.style.left='0';
+    glitchDiv.style.width='100%';
+    glitchDiv.style.height='100%';
+    glitchDiv.style.pointerEvents='none';
+    document.body.appendChild(glitchDiv);
+
+    const sounds = [
+      document.getElementById('glitch1'),
+      document.getElementById('glitch2'),
+      document.getElementById('glitch3')
+    ];
+
+    let glitchTime = 0;
+    const glitchInterval = setInterval(()=>{
+      // Random background flashes
+      if(Math.random()>0.5) document.body.style.background='white';
+      else document.body.style.background='black';
+
+      // Random text shift
+      const h2 = document.querySelector('h2');
+      if(h2){
+        h2.style.transform = `translate(${Math.random()*20-10}px,${Math.random()*20-10}px)`;
+      }
+
+      // Random sound
+      if(Math.random()>0.6) sounds[Math.floor(Math.random()*sounds.length)].play();
+
+      glitchTime+=100;
+      if(glitchTime>=10000){ // Stop after 10 seconds
+        clearInterval(glitchInterval);
+        if(h2) h2.style.transform='translate(0,0)';
+        document.body.style.background='black';
+      }
+    },100);
+  }
+
+}else{
+  document.body.innerHTML="<h2 style='color:#0F0;text-align:center;margin-top:20%;'>You've already visited this page!</h2>";
 }
 </script>
-
 </body>
 </html>
